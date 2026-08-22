@@ -1,0 +1,14 @@
+{
+  "name": "@redis/boilerplate",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "ioredis": "^6.0.0",
+    "mongoose": "^9.9.3"
+  },
+  "type": "module"
+}

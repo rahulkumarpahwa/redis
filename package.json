@@ -1,0 +1,29 @@
+{
+  "name": "redis-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Redis-based services monorepo",
+  "workspaces": [
+    "boilerplate",
+    "site-banner",
+    "otp",
+    "user",
+    "queue",
+    "pubsub",
+    "dashboard"
+  ],
+  "scripts": {
+    "dev:boilerplate": "npm run dev --workspace=boilerplate",
+    "dev:site-banner": "npm run dev --workspace=site-banner",
+    "dev:otp": "npm run dev --workspace=otp",
+    "dev:user": "npm run dev --workspace=user",
+    "dev:queue": "npm run dev --workspace=queue",
+    "dev:pubsub": "npm run dev --workspace=pubsub",
+    "dev:dashboard": "npm run dev --workspace=dashboard"
+  },
+  "type": "module",
+   "author": {
+    "name": "Rahul Kumar",
+    "email": "rahul@rahulkumarpahwa.me"
+  }
+}
