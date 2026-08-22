@@ -59,7 +59,7 @@ app.delete("/banner", async (req, res) => {
 app.get("/banner/exists", async (req, res) => {
   try {
     const exists = await redis.exists(SITE_BANNER_KEY);
-    res.status(200).json({ exists: Boolean(exists) });  // !!exists is convert to boolean
+    res.status(200).json({ exists: Boolean(exists), exists_value: exists }); // !!exists is convert to boolean
   } catch (error) {
     console.log(error);
   }
