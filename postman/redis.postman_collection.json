@@ -1,0 +1,119 @@
+{
+  "info": {
+    "name": "redis",
+    "_postman_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "description": "Postman collection for the Redis monorepo services",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000"
+    }
+  ],
+  "item": [
+    {
+      "name": "boilerplate",
+      "item": [
+        {
+          "name": "GET /redis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/redis",
+              "host": ["{{base_url}}"],
+              "path": ["redis"]
+            }
+          }
+        },
+        {
+          "name": "GET /mongo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/mongo",
+              "host": ["{{base_url}}"],
+              "path": ["mongo"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "site-banner",
+      "item": [
+        {
+          "name": "GET /redis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/redis",
+              "host": ["{{base_url}}"],
+              "path": ["redis"]
+            }
+          }
+        },
+        {
+          "name": "POST /banner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Welcome to https://rahulkumarpahwa.me!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/banner",
+              "host": ["{{base_url}}"],
+              "path": ["banner"]
+            }
+          }
+        },
+        {
+          "name": "GET /banner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/banner",
+              "host": ["{{base_url}}"],
+              "path": ["banner"]
+            }
+          }
+        },
+        {
+          "name": "DELETE /banner",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/banner",
+              "host": ["{{base_url}}"],
+              "path": ["banner"]
+            }
+          }
+        },
+        {
+          "name": "GET /banner/exists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/banner/exists",
+              "host": ["{{base_url}}"],
+              "path": ["banner", "exists"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

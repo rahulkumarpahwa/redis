@@ -45,11 +45,21 @@ app.get("/banner", async (req, res) => {
   }
 });
 
-
 app.delete("/banner", async (req, res) => {
   try {
     await redis.del(SITE_BANNER_KEY);
-    res.status(200).json({ success: true, message: `deleted ${SITE_BANNER_KEY}` });
+    res
+      .status(200)
+      .json({ success: true, message: `deleted ${SITE_BANNER_KEY}` });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.get("/banner/exists", async (req, res) => {
+  try {
+    const exists = await redis.exists(SITE_BANNER_KEY);
+    res.status(200).json({ exists: Boolean(exists) });  // !!exists is convert to boolean
   } catch (error) {
     console.log(error);
   }
