@@ -1,0 +1,1 @@
+export const SITE_BANNER_KEY = "app:site-banner-key"
