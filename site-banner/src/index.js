@@ -36,7 +36,7 @@ app.get("/banner", async (req, res) => {
   try {
     const banner = await redis.get(SITE_BANNER_KEY);
     if (banner) {
-      res.status(201).json({ success: true, banner: message });
+      res.status(200).json({ success: true, banner: banner });
       return;
     }
     res.status(400).json({ success: false, message: "No Banner Message" });
