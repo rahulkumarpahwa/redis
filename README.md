@@ -19,7 +19,11 @@ Redis/
 │   └── src/index.js
 ├── site-banner/          # Site banner service
 │   └── src/index.js
-├── otp/                  # OTP service (planned)
+├── otp/                  # OTP service
+│   └── src/
+│       ├── index.js      # Express app & routes
+│       ├── utils.js      # Phone validation & OTP generation
+│       └── conn.js       # MongoDB connection
 ├── user/                 # User service (planned)
 ├── queue/                # Queue service (planned)
 ├── pubsub/               # Pub/Sub service (planned)
@@ -61,7 +65,7 @@ This starts:
 ### 3. Run a service
 
 ```bash
-npm run dev:boilerplate     # or dev:site-banner
+npm run dev:boilerplate     # or dev:site-banner, dev:otp
 ```
 
 ## Workspaces
@@ -70,7 +74,7 @@ npm run dev:boilerplate     # or dev:site-banner
 |---------------|-------------|----------------------------------------------|
 | `boilerplate` | ✅ Implemented | Starter template with Redis & MongoDB health endpoints |
 | `site-banner` | ✅ Implemented | Site banner service                          |
-| `otp`         | 🚧 Planned   | OTP generation & verification service        |
+| `otp`         | ✅ Implemented | OTP generation & verification service (30s expiry) |
 | `user`        | 🚧 Planned   | User management service                      |
 | `queue`       | 🚧 Planned   | Background job queue service                 |
 | `pubsub`      | 🚧 Planned   | Publish/subscribe messaging service          |
@@ -82,7 +86,7 @@ npm run dev:boilerplate     # or dev:site-banner
 |----------------------------|--------------------------------------|
 | `npm run dev:boilerplate`  | Run the boilerplate service          |
 | `npm run dev:site-banner`  | Run the site-banner service          |
-| `npm run dev:otp`          | Run the OTP service (planned)        |
+| `npm run dev:otp`          | Run the OTP service                  |
 | `npm run dev:user`         | Run the user service (planned)       |
 | `npm run dev:queue`        | Run the queue service (planned)      |
 | `npm run dev:pubsub`       | Run the pub/sub service (planned)    |
@@ -98,12 +102,41 @@ npm run dev:boilerplate     # or dev:site-banner
 
 ## API Endpoints
 
-Current services (`boilerplate`, `site-banner`) expose:
+Current services expose:
 
 | Endpoint | Method | Description                          | Response                          |
 |----------|--------|--------------------------------------|-----------------------------------|
 | `/redis` | GET    | Redis connectivity check (PING)      | `{ "redis": "PONG" }`             |
 | `/mongo` | GET    | MongoDB connection check             | `{ "mongodb": "connected", "databse": "database_with_redis" }` |
+
+### OTP service (`otp`)
+
+| Endpoint                | Method | Description                                              | Response                                      |
+|-------------------------|--------|----------------------------------------------------------|-----------------------------------------------|
+| `/otp`                  | POST   | Generate & store OTP for an Indian mobile number (30s TTL) | `201` → `{ "message": "OTP sent", "otp": "12345" }` |
+| `/otp/verify`           | POST   | Verify the OTP; deletes the key on success               | `200` → `{ "success": true, "message": "OTP verified successfully." }` |
+| `/otp/:phone/ttl`       | GET    | Get remaining TTL (seconds) of the OTP key              | `200` → `{ "ttl": 25 }`                       |
+
+Request examples:
+
+```bash
+# Generate OTP
+curl -X POST http://localhost:5000/otp \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "9876543210"}'
+
+# Verify OTP
+curl -X POST http://localhost:5000/otp/verify \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "9876543210", "otp": "12345"}'
+```
+
+Notes:
+
+- Phone numbers are validated as **Indian mobile numbers** (`validator` `en-IN` via `zod`).
+- OTPs are stored in Redis under the key `otp:<phone>` with a **30-second expiry** (`EX 30`).
+- On successful verification the OTP key is deleted.
+- `GET /otp/:phone/ttl` returns `-2` if the key does not exist, `-1` if it exists without an expiry.
 
 ## License
 

@@ -114,6 +114,83 @@
           }
         }
       ]
+    },
+    {
+      "name": "otp",
+      "item": [
+        {
+          "name": "GET /redis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/redis",
+              "host": ["{{base_url}}"],
+              "path": ["redis"]
+            }
+          }
+        },
+        {
+          "name": "POST /otp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/otp",
+              "host": ["{{base_url}}"],
+              "path": ["otp"]
+            }
+          }
+        },
+        {
+          "name": "POST /otp/verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"otp\": \"12345\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/otp/verify",
+              "host": ["{{base_url}}"],
+              "path": ["otp", "verify"]
+            }
+          }
+        },
+        {
+          "name": "GET /otp/:phone/ttl",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/otp/:phone/ttl",
+              "host": ["{{base_url}}"],
+              "path": ["otp", ":phone", "ttl"],
+              "variable": [
+                {
+                  "key": "phone",
+                  "value": "9876543210"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
