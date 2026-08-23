@@ -3,6 +3,7 @@ import Redis from "ioredis";
 import { connection } from "./conn.js";
 import { generateOtp, parseAndValidatePhone } from "./utils.js";
 import { updateOtpStatus } from "./DB/updateSchema.js";
+import { date } from "zod";
 
 const app = express();
 app.use(express.json());
@@ -35,7 +36,19 @@ app.post("/otp", async (req, res) => {
 
     const otp = generateOtp();
 
-    await redis.set(getOtpKey(phone), otp, "EX", 30); // EX -> expiry and here time is 30 seconds
+    const otpObj = {
+      otp: otp,
+      attempts: 0,
+      maxAttempts: 3,
+      createdAt: new Date(Date.now()),
+      lastAttemptAt: null,
+      // blockedUntil: new Date(Date.now()),
+    };
+
+    // todo : Implement the above obj as value and then apply all the valiations based upon it.
+
+    const redisData = await redis.set(getOtpKey(phone), otp, "EX", 30); // EX -> expiry and here time is 30 seconds
+    console.log(redisData);
     res.status(201).json({ message: "OTP sent", otp: otp });
   } catch (error) {
     console.log(error);
