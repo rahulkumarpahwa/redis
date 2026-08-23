@@ -4,6 +4,6 @@ export async function updateOtpStatus(phone) {
   return Otp.findOneAndUpdate(
     { phone },
     { $set: { isOtpVerified: true } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: "after" },
   );
 }
