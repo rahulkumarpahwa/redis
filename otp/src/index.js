@@ -2,6 +2,7 @@ import express from "express";
 import Redis from "ioredis";
 import { connection } from "./conn.js";
 import { generateOtp, parseAndValidatePhone } from "./utils.js";
+import { updateOtpStatus } from "./DB/updateSchema.js";
 
 const app = express();
 app.use(express.json());
@@ -55,7 +56,7 @@ app.post("/otp/verify", async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // TODO: user's isOtpVerified status will be set true in DB.
+    await updateOtpStatus(phone);
 
     await redis.del(otpKey);
     res
