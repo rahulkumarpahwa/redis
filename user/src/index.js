@@ -47,7 +47,7 @@ app.get("/user/:id/json", async (req, res) => {
 app.post("/user/:id/hash", async (req, res) => {
   try {
     const id = req.params.id;
-    const redisData = await redis.hset(`user:${id}:json`, req.body);
+    const redisData = await redis.hset(`user:${id}:hash`, req.body);
     console.log(redisData);
     res.status(201).json({ message: "User data set as hash" });
   } catch (error) {
@@ -58,11 +58,9 @@ app.post("/user/:id/hash", async (req, res) => {
 app.get("/user/:id/hash", async (req, res) => {
   try {
     const id = req.params.id;
-    const redisData = await redis.hgetall(`user:${id}:json`);
+    const redisData = await redis.hgetall(`user:${id}:hash`);
     console.log(redisData);
-    res
-      .status(200)
-      .json({ message: "User data get as hash", user: redisData });
+    res.status(200).json({ message: "User data get as hash", user: redisData });
   } catch (error) {
     console.log(error);
   }
