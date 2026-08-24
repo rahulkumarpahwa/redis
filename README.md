@@ -24,12 +24,14 @@ Redis/
 │       ├── index.js      # Express app & routes
 │       ├── utils.js      # Phone validation & OTP generation
 │       └── conn.js       # MongoDB connection
-├── user/                 # User service (planned)
+├── user/                 # User service (Redis JSON & hash storage)
+│   └── src/index.js
 ├── queue/                # Queue service (planned)
 ├── pubsub/               # Pub/Sub service (planned)
 ├── dashboard/            # Dashboard (planned)
 ├── docker-compose.yml    # Redis + MongoDB infrastructure
 ├── package.json          # Workspace root
+├── postman/              # Postman collection for the services
 └── README.md
 ```
 
@@ -75,7 +77,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `boilerplate` | ✅ Implemented | Starter template with Redis & MongoDB health endpoints |
 | `site-banner` | ✅ Implemented | Site banner service                          |
 | `otp`         | ✅ Implemented | OTP generation & verification service (30s expiry) |
-| `user`        | 🚧 Planned   | User management service                      |
+| `user`        | ✅ Implemented | User data stored as Redis JSON strings & hashes |
 | `queue`       | 🚧 Planned   | Background job queue service                 |
 | `pubsub`      | 🚧 Planned   | Publish/subscribe messaging service          |
 | `dashboard`   | 🚧 Planned   | Dashboard service                            |
@@ -87,7 +89,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `npm run dev:boilerplate`  | Run the boilerplate service          |
 | `npm run dev:site-banner`  | Run the site-banner service          |
 | `npm run dev:otp`          | Run the OTP service                  |
-| `npm run dev:user`         | Run the user service (planned)       |
+| `npm run dev:user`         | Run the user service                 |
 | `npm run dev:queue`        | Run the queue service (planned)      |
 | `npm run dev:pubsub`       | Run the pub/sub service (planned)    |
 | `npm run dev:dashboard`    | Run the dashboard (planned)          |
@@ -102,12 +104,31 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 
 ## API Endpoints
 
-Current services expose:
+> All services default to port `5000` (`PORT` env var), so run one service at a time locally.
 
-| Endpoint | Method | Description                          | Response                          |
-|----------|--------|--------------------------------------|-----------------------------------|
-| `/redis` | GET    | Redis connectivity check (PING)      | `{ "redis": "PONG" }`             |
-| `/mongo` | GET    | MongoDB connection check             | `{ "mongodb": "connected", "databse": "database_with_redis" }` |
+### Boilerplate (`boilerplate`)
+
+| Endpoint | Method | Description                     | Response                                                       |
+|----------|--------|---------------------------------|----------------------------------------------------------------|
+| `/redis` | GET    | Redis connectivity check (PING) | `{ "redis": "PONG" }`                                          |
+| `/mongo` | GET    | MongoDB connection check        | `{ "mongodb": "connected", "databse": "database_with_redis" }` |
+
+### Site banner (`site-banner`)
+
+Stores a single banner message at the Redis key `app:site-banner-key`. Every service also exposes `GET /redis` for a connectivity check.
+
+| Endpoint         | Method | Description                         | Response                                                                      |
+|------------------|--------|-------------------------------------|-------------------------------------------------------------------------------|
+| `/banner`        | POST   | Set the banner message              | `201` → `{ "success": true, "message": "data setted in redis successfully!" }` |
+| `/banner`        | GET    | Get the banner message              | `200` → `{ "success": true, "banner": "..." }`; `400` if no banner is set     |
+| `/banner`        | DELETE | Delete the banner key               | `200` → `{ "success": true, "message": "deleted app:site-banner-key" }`       |
+| `/banner/exists` | GET    | Check whether the banner key exists | `200` → `{ "exists": true, "exists_value": 1 }`                                |
+
+```bash
+curl -X POST http://localhost:5000/banner \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Site under maintenance!"}'
+```
 
 ### OTP service (`otp`)
 
@@ -137,6 +158,44 @@ Notes:
 - OTPs are stored in Redis under the key `otp:<phone>` with a **30-second expiry** (`EX 30`).
 - On successful verification the OTP key is deleted.
 - `GET /otp/:phone/ttl` returns `-2` if the key does not exist, `-1` if it exists without an expiry.
+
+### User service (`user`)
+
+Demonstrates storing the same user document in Redis in two formats — as a JSON string and as a hash.
+
+| Endpoint         | Method | Description                               | Response                                                          |
+|------------------|--------|-------------------------------------------|--------------------------------------------------------------------|
+| `/user/:id/json` | POST   | Store the request body as a JSON string   | `201` → `{ "message": "User data set as json" }`                   |
+| `/user/:id/json` | GET    | Read the stored JSON string               | `200` → `{ "success": true, "user": { ... } }` (`null` if unset)   |
+| `/user/:id/hash` | POST   | Store the request body fields as a hash   | `201` → `{ "message": "User data set as hash" }`                   |
+| `/user/:id/hash` | GET    | Read all fields of the stored hash        | `200` → `{ "message": "User data get as hash", "user": { ... } }`  |
+
+Request examples:
+
+```bash
+# Set user as JSON
+curl -X POST http://localhost:5000/user/1/json \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Rahul Kumar", "email": "rahul@rahulkumarpahwa.me"}'
+
+# Get user as JSON
+curl http://localhost:5000/user/1/json
+
+# Set user fields as a hash
+curl -X POST http://localhost:5000/user/1/hash \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Rahul Kumar", "email": "rahul@rahulkumarpahwa.me"}'
+
+# Get user as hash
+curl http://localhost:5000/user/1/hash
+```
+
+Notes:
+
+- Both variants currently write to the same key namespace: `user:<id>:json`.
+- The JSON variant uses `SET` / `GET` with `JSON.stringify` / `JSON.parse`; the hash variant uses `HSET` / `HGETALL`.
+- No TTL is set on user keys — they persist until deleted.
+- Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
 
 ## License
 

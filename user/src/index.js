@@ -62,7 +62,7 @@ app.get("/user/:id/hash", async (req, res) => {
     console.log(redisData);
     res
       .status(200)
-      .json({ message: "User data get as hash", user: hashedUser });
+      .json({ message: "User data get as hash", user: redisData });
   } catch (error) {
     console.log(error);
   }
