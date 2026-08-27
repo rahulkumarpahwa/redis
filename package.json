@@ -8,6 +8,7 @@
     "site-banner",
     "otp",
     "user",
+    "user-session",
     "queue",
     "pubsub",
     "dashboard"
@@ -17,6 +18,7 @@
     "dev:site-banner": "npm run dev --workspace=site-banner",
     "dev:otp": "npm run dev --workspace=otp",
     "dev:user": "npm run dev --workspace=user",
+    "dev:user-session": "npm run dev --workspace=user-session",
     "dev:queue": "npm run dev --workspace=queue",
     "dev:pubsub": "npm run dev --workspace=pubsub",
     "dev:dashboard": "npm run dev --workspace=dashboard"
