@@ -298,6 +298,173 @@
           }
         }
       ]
+    },
+    {
+      "name": "user-session",
+      "item": [
+        {
+          "name": "GET /redis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/redis",
+              "host": ["{{base_url}}"],
+              "path": ["redis"]
+            }
+          }
+        },
+        {
+          "name": "POST /user/signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul@rahulkumarpahwa.me\",\n  \"password\": \"Str0ngP@ssw0rd!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/signup",
+              "host": ["{{base_url}}"],
+              "path": ["user", "signup"]
+            }
+          }
+        },
+        {
+          "name": "POST /user/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul@rahulkumarpahwa.me\",\n  \"password\": \"Str0ngP@ssw0rd!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/login",
+              "host": ["{{base_url}}"],
+              "path": ["user", "login"]
+            }
+          }
+        },
+        {
+          "name": "GET /user/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/:id",
+              "host": ["{{base_url}}"],
+              "path": ["user", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /user/:id/json",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar\",\n  \"email\": \"rahul@rahulkumarpahwa.me\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/:id/json",
+              "host": ["{{base_url}}"],
+              "path": ["user", ":id", "json"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /user/:id/json",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/:id/json",
+              "host": ["{{base_url}}"],
+              "path": ["user", ":id", "json"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /user/:id/hash",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar\",\n  \"email\": \"rahul@rahulkumarpahwa.me\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/:id/hash",
+              "host": ["{{base_url}}"],
+              "path": ["user", ":id", "hash"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /user/:id/hash",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/:id/hash",
+              "host": ["{{base_url}}"],
+              "path": ["user", ":id", "hash"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
