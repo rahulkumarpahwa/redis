@@ -26,6 +26,12 @@ Redis/
 │       └── conn.js       # MongoDB connection
 ├── user/                 # User service (Redis JSON & hash storage)
 │   └── src/index.js
+├── user-session/         # User session service (MongoDB auth + Redis cache)
+│   └── src/
+│       ├── index.js            # Express app & routes (signup, login, cache lookup)
+│       ├── db/connection.js    # MongoDB connection
+│       ├── validation/user.js  # Zod user validation (email + password)
+│       └── schema/user.js      # Mongoose User schema
 ├── queue/                # Queue service (planned)
 ├── pubsub/               # Pub/Sub service (planned)
 ├── dashboard/            # Dashboard (planned)
@@ -78,6 +84,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `site-banner` | ✅ Implemented | Site banner service                          |
 | `otp`         | ✅ Implemented | OTP generation & verification service (30s expiry) |
 | `user`        | ✅ Implemented | User data stored as Redis JSON strings & hashes |
+| `user-session`| ✅ Implemented | User session & auth service (MongoDB + Redis caching)        |
 | `queue`       | 🚧 Planned   | Background job queue service                 |
 | `pubsub`      | 🚧 Planned   | Publish/subscribe messaging service          |
 | `dashboard`   | 🚧 Planned   | Dashboard service                            |
@@ -90,6 +97,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `npm run dev:site-banner`  | Run the site-banner service          |
 | `npm run dev:otp`          | Run the OTP service                  |
 | `npm run dev:user`         | Run the user service                 |
+| `npm run dev:user-session` | Run the user-session service         |
 | `npm run dev:queue`        | Run the queue service (planned)      |
 | `npm run dev:pubsub`       | Run the pub/sub service (planned)    |
 | `npm run dev:dashboard`    | Run the dashboard (planned)          |
@@ -195,6 +203,57 @@ Notes:
 - Both variants currently write to the same key namespace: `user:<id>:json`.
 - The JSON variant uses `SET` / `GET` with `JSON.stringify` / `JSON.parse`; the hash variant uses `HSET` / `HGETALL`.
 - No TTL is set on user keys — they persist until deleted.
+- Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
+
+### User session (`user-session`)
+
+Demonstrates a session/auth flow backed by MongoDB, with Redis used as a read cache (via the `user` service). On login the user document is written to Redis as a JSON string under `user:<id>:json`; subsequent lookups check Redis first and fall back to the database.
+
+| Endpoint             | Method | Description                                                       | Response                                                                 |
+|----------------------|--------|-------------------------------------------------------------------|--------------------------------------------------------------------------|
+| `/user/signup`       | POST   | Validate & create a user (email + strong password) in MongoDB     | `200` → `{ "message": "user can be created successfully", "user": {...} }` |
+| `/user/login`        | POST   | Verify credentials & cache the user in Redis                      | `200` → `{ "message": "user loggedin successfully", "user": {...} }`     |
+| `/users/:id`         | GET    | Fetch a user (Redis cache first, MongoDB fallback)                | `200` → `{ "message": "...", "user": {...} }`; `400` if not found        |
+| `/user/:id/json`     | POST   | Store request body as a JSON string in Redis                      | `201` → `{ "message": "User data set as json" }`                         |
+| `/user/:id/json`     | GET    | Read the stored JSON string from Redis                            | `200` → `{ "success": true, "user": { ... } }` (`null` if unset)         |
+| `/user/:id/json`     | DELETE | Delete the user JSON key from Redis                               | `200` → `{ "message": "User data deleted", "user": <deleted_count> }`    |
+| `/user/:id/hash`     | POST   | Store the request body fields as a Redis hash                     | `201` → `{ "message": "User data set as hash" }`                         |
+| `/user/:id/hash`     | GET    | Read all fields of the stored hash                                | `200` → `{ "message": "User data get as hash", "user": { ... } }`        |
+| `/redis`             | GET    | Redis connectivity check (PING)                                   | `200` → `{ "redis": "PONG" }`                                            |
+
+Request examples:
+
+```bash
+# Signup
+curl -X POST http://localhost:5000/user/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email": "rahul@rahulkumarpahwa.me", "password": "Str0ngP@ssw0rd"}'
+
+# Login (caches the user in Redis under user:<id>:json)
+curl -X POST http://localhost:5000/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "rahul@rahulkumarpahwa.me", "password": "Str0ngP@ssw0rd"}'
+
+# Fetch user (served from Redis if cached, otherwise from MongoDB)
+curl http://localhost:5000/users/64f1a2b3c4d5e6f7a8b9c0d1
+
+# Set / get user as JSON directly in Redis
+curl -X POST http://localhost:5000/user/64f1a2b3c4d5e6f7a8b9c0d1/json \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Rahul Kumar", "email": "rahul@rahulkumarpahwa.me"}'
+
+curl http://localhost:5000/user/64f1a2b3c4d5e6f7a8b9c0d1/json
+
+# Delete the cached user JSON key
+curl -X DELETE http://localhost:5000/user/64f1a2b3c4d5e6f7a8b9c0d1/json
+```
+
+Notes:
+
+- Passwords are validated with `validator.isEmail` (email) and `validator.isStrongPassword` (password) in the Mongoose schema, and with `zod` (`z.email()`, min 8 chars) in the request validation.
+- On login the user object is stored in Redis at `user:<id>:json` via `SET` with `JSON.stringify`; `GET /users/:id` reads from Redis first (through the `user` service endpoints) and falls back to a MongoDB `findOne` on a cache miss.
+- The service also re-uses the `user` service endpoints (`/user/:id/json`, `/user/:id/hash`) for direct Redis read/write.
+- Passwords are stored and compared in plaintext in this demo — not for production use.
 - Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
 
 ## License
