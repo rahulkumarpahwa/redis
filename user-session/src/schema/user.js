@@ -13,7 +13,6 @@ const userSchema = new mongoose.Schema(
         }
         return true;
       },
-      message: `${value} is not a valid email`,
     },
 
     password: {
@@ -24,11 +23,11 @@ const userSchema = new mongoose.Schema(
         if (!validator.isStrongPassword(value)) {
           throw new Error("invalid credentails");
         }
-        return false;
+        return true;
       },
     },
   },
   { timestamps: true },
 );
 
-export default User = mongoose.Model("User", userSchema);
+export const User = mongoose.model("User", userSchema);

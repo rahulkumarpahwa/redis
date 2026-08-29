@@ -1,16 +1,17 @@
-import zod from "zod";
+import { z } from "zod";
 
-export const userSchema = zod.object({
-  email: zod.email().required(),
-  password: zod.string().minLength(8).required(),
+export const userSchema = z.object({
+  email: z.email(),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
 export const validateUser = (data) => {
-  const result = userSchema.parse(data);
+  const result = userSchema.safeParse(data);
+
   if (!result.success) {
     console.log(result.error);
     return {};
-  } else {
-    return result.data;
   }
+
+  return result.data;
 };
