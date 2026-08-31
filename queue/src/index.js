@@ -1,5 +1,6 @@
 import express from "express";
 import Redis from "ioredis";
+import { worker } from "./worker";
 
 const app = express();
 app.use(express.json());
@@ -34,6 +35,19 @@ app.get("/emails/length", async (req, res) => {
     res.status(200).json({
       message: "queue length",
       length: queueLength,
+    });
+    return;
+  } catch (error) {
+    res.status(400).json({ error: error });
+    return;
+  }
+});
+
+app.get("/emails/worker", async (req, res) => {
+  try {
+    await worker();
+    res.status(200).json({
+      message: "email worker sended emails",
     });
     return;
   } catch (error) {
@@ -103,6 +117,20 @@ app.use((error, req, res, next) => {
   });
 });
 
+// process.on("SIGTERM", async () => {
+//   console.log("Shutting down...");
+//   await redis.quit();
+//   process.exit(0);
+// });
+
 app.listen(process.env.PORT || 5000, async () => {
   console.log("server is listening at http://localhost:5000");
 });
+
+/**
+ * @description
+ * issues with the Redis Based Queue
+ * - Job Loss
+ * - No Retry System
+ * - Parallel Workers
+ */
