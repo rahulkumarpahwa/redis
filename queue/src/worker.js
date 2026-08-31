@@ -1,4 +1,4 @@
-export const worker = async () => {
+export const worker = async (redis, QUEUE_KEY) => {
   let running = true;
 
   process.on("SIGTERM", () => {

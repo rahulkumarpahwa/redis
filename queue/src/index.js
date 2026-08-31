@@ -1,6 +1,6 @@
 import express from "express";
 import Redis from "ioredis";
-import { worker } from "./worker";
+import { worker } from "./worker.js";
 
 const app = express();
 app.use(express.json());
@@ -45,12 +45,13 @@ app.get("/emails/length", async (req, res) => {
 
 app.get("/emails/worker", async (req, res) => {
   try {
-    await worker();
+    await worker(redis, QUEUE_KEY);
     res.status(200).json({
       message: "email worker sended emails",
     });
     return;
   } catch (error) {
+    console.log(error)
     res.status(400).json({ error: error });
     return;
   }
