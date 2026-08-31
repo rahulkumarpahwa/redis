@@ -464,6 +464,68 @@
             }
           }
         }
+            ]
+    },
+    {
+      "name": "queue",
+      "item": [
+        {
+          "name": "GET /redis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/redis",
+              "host": ["{{base_url}}"],
+              "path": ["redis"]
+            }
+          }
+        },
+        {
+          "name": "POST /emails",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"sender@example.com\",\n  \"to\": \"recipient@example.com\",\n  \"subject\": \"Welcome!\",\n  \"body\": \"Your account has been created.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails",
+              "host": ["{{base_url}}"],
+              "path": ["emails"]
+            }
+          }
+        },
+        {
+          "name": "GET /emails/length",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/emails/length",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "length"]
+            }
+          }
+        },
+        {
+          "name": "GET /emails/process/one",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/emails/process/one",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "process", "one"]
+            }
+          }
+        }
       ]
     }
   ]

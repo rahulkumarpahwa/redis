@@ -32,7 +32,8 @@ Redis/
 │       ├── db/connection.js    # MongoDB connection
 │       ├── validation/user.js  # Zod user validation (email + password)
 │       └── schema/user.js      # Mongoose User schema
-├── queue/                # Queue service (planned)
+├── queue/                # Queue service
+│   └── src/index.js
 ├── pubsub/               # Pub/Sub service (planned)
 ├── dashboard/            # Dashboard (planned)
 ├── docker-compose.yml    # Redis + MongoDB infrastructure
@@ -85,7 +86,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `otp`         | ✅ Implemented | OTP generation & verification service (30s expiry) |
 | `user`        | ✅ Implemented | User data stored as Redis JSON strings & hashes |
 | `user-session`| ✅ Implemented | User session & auth service (MongoDB + Redis caching)        |
-| `queue`       | 🚧 Planned   | Background job queue service                 |
+| `queue`       | ✅ Implemented | Background job queue service                 |
 | `pubsub`      | 🚧 Planned   | Publish/subscribe messaging service          |
 | `dashboard`   | 🚧 Planned   | Dashboard service                            |
 
@@ -98,7 +99,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `npm run dev:otp`          | Run the OTP service                  |
 | `npm run dev:user`         | Run the user service                 |
 | `npm run dev:user-session` | Run the user-session service         |
-| `npm run dev:queue`        | Run the queue service (planned)      |
+| `npm run dev:queue`        | Run the queue service                |
 | `npm run dev:pubsub`       | Run the pub/sub service (planned)    |
 | `npm run dev:dashboard`    | Run the dashboard (planned)          |
 
@@ -254,6 +255,39 @@ Notes:
 - On login the user object is stored in Redis at `user:<id>:json` via `SET` with `JSON.stringify`; `GET /users/:id` reads from Redis first (through the `user` service endpoints) and falls back to a MongoDB `findOne` on a cache miss.
 - The service also re-uses the `user` service endpoints (`/user/:id/json`, `/user/:id/hash`) for direct Redis read/write.
 - Passwords are stored and compared in plaintext in this demo — not for production use.
+- Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
+
+### Queue service (`queue`)
+
+Demonstrates a simple background job queue using Redis lists. Email jobs are pushed to the front of the list with `LPUSH` and consumed from the back with `RPOP`, implementing a FIFO queue. Jobs are stored as JSON strings under the Redis key `email:queue:key`.
+
+| Endpoint              | Method | Description                                  | Response                                                                          |
+|-----------------------|--------|----------------------------------------------|-----------------------------------------------------------------------------------|
+| `/redis`              | GET    | Redis connectivity check (PING)            | `200` → `{ "redis": "PONG" }`                                                    |
+| `/emails`             | POST   | Add a new email job to the queue (LPUSH)   | `200` → `{ "message": "new job is added to the queue", "job": {...} }`            |
+| `/emails/length`      | GET    | Get the current queue length (LLEN)      | `200` → `{ "message": "queue length", "length": <n> }`                           |
+| `/emails/process/one` | GET    | Process & remove the next job (RPOP)      | `200` → `{ "message": "email sent", "email": {...} }`; `400` if queue empty       |
+
+Request examples:
+
+```bash
+# Add an email job to the queue
+curl -X POST http://localhost:5000/emails \
+  -H "Content-Type: application/json" \
+  -d '{"from": "sender@example.com", "to": "recipient@example.com", "subject": "Welcome!", "body": "Your account has been created."}'
+
+# Check queue length
+curl http://localhost:5000/emails/length
+
+# Process one job (pops from the queue)
+curl http://localhost:5000/emails/process/one
+```
+
+Notes:
+
+- Jobs are stored as JSON strings in a Redis list under the key `email:queue:key`.
+- `LPUSH` + `RPOP` implements FIFO ordering (newest job pushed to head, oldest popped from tail).
+- `GET /emails/process/one` returns a `400` error when the queue is empty ("no jobs left in queue.").
 - Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
 
 ## License

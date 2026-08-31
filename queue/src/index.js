@@ -4,9 +4,7 @@ import Redis from "ioredis";
 const app = express();
 app.use(express.json());
 
-const redis = new Redis({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-});
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 
 const QUEUE_KEY = "email:queue:key";
 
@@ -32,13 +30,7 @@ app.post("/emails", async (req, res) => {
 
 app.get("/emails/length", async (req, res) => {
   try {
-    const queueLength = await redis.llen(QUEUE_KEY, (err, res) => {
-      if (err) {
-        throw new Error(err);
-      } else {
-        return res;
-      }
-    });
+    const queueLength = await redis.llen(QUEUE_KEY);
     res.status(200).json({
       message: "queue length",
       length: queueLength,
@@ -52,15 +44,9 @@ app.get("/emails/length", async (req, res) => {
 
 app.get("/emails/process/one", async (req, res) => {
   try {
-    const job = await redis.rpop(QUEUE_KEY, (err, res) => {
-      if (err) {
-        throw new Error(err);
-      } else {
-        return res;
-      }
-    });
+    const job = await redis.rpop(QUEUE_KEY);
 
-    if (job) {
+    if (!job) {
       throw new Error("no jobs left in queue.");
     }
 
@@ -71,6 +57,28 @@ app.get("/emails/process/one", async (req, res) => {
     res.status(200).json({
       message: "email sent",
       email: jobObj,
+    });
+    return;
+  } catch (error) {
+    res.status(400).json({ error: error });
+    return;
+  }
+});
+
+app.get("/emails", async (req, res) => {
+  try {
+    const jobs = await redis.lrange(QUEUE_KEY, 0, -1);
+
+    if (!jobs) {
+      throw new Error("no jobs left in queue.");
+    }
+
+    const emails = jobs.map((job) => JSON.parse(job));
+
+    res.status(200).json({
+      message: "emails in the queue",
+      emails,
+      length: emails.length,
     });
     return;
   } catch (error) {
