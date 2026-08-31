@@ -8,14 +8,15 @@ export const worker = async (redis, QUEUE_KEY) => {
   while (running) {
     const job = await redis.rpop(QUEUE_KEY);
 
+    if ((await redis.llen(QUEUE_KEY)) == 0) {
+      console.log("NO JOBS LEFT");
+      running = false;
+    }
+
     if (!job) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("Retrying again!");
       continue;
-    }
-
-    if ((await redis.llen(QUEUE_KEY)) == 0) {
-      running = false;
     }
 
     const email = await JSON.parse(job);

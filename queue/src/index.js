@@ -118,12 +118,6 @@ app.use((error, req, res, next) => {
   });
 });
 
-// process.on("SIGTERM", async () => {
-//   console.log("Shutting down...");
-//   await redis.quit();
-//   process.exit(0);
-// });
-
 app.listen(process.env.PORT || 5000, async () => {
   console.log("server is listening at http://localhost:5000");
 });
