@@ -698,6 +698,54 @@
           }
         }
       ]
+    },
+    {
+      "name": "bullmq",
+      "item": [
+        {
+          "name": "POST /emails/bullmq",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"sender@example.com\",\n  \"to\": \"recipient@example.com\",\n  \"subject\": \"Welcome!\",\n  \"body\": \"Your account has been created.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/bullmq",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "emails",
+                "bullmq"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /emails/length",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/emails/length",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "emails",
+                "length"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
