@@ -1,5 +1,6 @@
 import express from "express";
 import { emailQueue } from "./queue.js";
+import { runCommand } from "./executeWorker.js";
 
 const app = express();
 app.use(express.json());
@@ -15,7 +16,7 @@ app.post("/emails/bullmq", async (req, res) => {
     };
 
     const queuedJob = await emailQueue.add("email-queue-job", job, {
-      removeOnComplete: true,
+      removeOnComplete: false,
       attempts: 3,
       backoff: {
         type: "exponential",
@@ -52,6 +53,16 @@ app.get("/emails/length", async (req, res) => {
   }
 });
 
+app.post("/email/start/worker", async (req, res) => {
+  try {
+    runCommand();
+    res.status(201).json({ message: "worker started" });
+    return;
+  } catch (error) {
+    res.status(400).json({ error: error });
+    return;
+  }
+});
 
 app.use((error, req, res, next) => {
   return res.status(500).json({
