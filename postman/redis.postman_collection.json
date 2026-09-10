@@ -744,6 +744,24 @@
               ]
             }
           }
+        },
+        {
+          "name": "POST /email/start/worker",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/email/start/worker",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "email",
+                "start",
+                "worker"
+              ]
+            }
+          }
         }
       ]
     }
