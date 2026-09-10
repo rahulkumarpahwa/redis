@@ -10,6 +10,7 @@
     "user",
     "user-session",
     "queue",
+    "bullmq",
     "pubsub",
     "dashboard"
   ],
@@ -20,11 +21,12 @@
     "dev:user": "npm run dev --workspace=user",
     "dev:user-session": "npm run dev --workspace=user-session",
     "dev:queue": "npm run dev --workspace=queue",
+    "dev:bullmq": "npm run dev --workspace=bullmq",
     "dev:pubsub": "npm run dev --workspace=pubsub",
     "dev:dashboard": "npm run dev --workspace=dashboard"
   },
   "type": "module",
-   "author": {
+  "author": {
     "name": "Rahul Kumar",
     "email": "rahul@rahulkumarpahwa.me"
   }
