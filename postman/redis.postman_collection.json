@@ -764,6 +764,71 @@
           }
         }
       ]
+    },
+    {
+      "name": "pubsub",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /emails/publish",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"sender@example.com\",\n  \"to\": \"recipient@example.com\",\n  \"subject\": \"Welcome!\",\n  \"body\": \"Your account has been created.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/publish",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "emails",
+                "publish"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /email/start/subscriber",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/email/start/subscriber",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "email",
+                "start",
+                "subscriber"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
