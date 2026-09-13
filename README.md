@@ -8,6 +8,7 @@ A monorepo of Redis-based microservices built with Node.js, Express, and MongoDB
 - **Express 5** — web framework
 - **ioredis 6** — Redis client
 - **Mongoose 9** — MongoDB ODM
+- **BullMQ 6** — Redis-backed job queue
 - **Docker Compose** — local infrastructure (Redis + MongoDB)
 - **npm workspaces** — monorepo management
 
@@ -32,9 +33,19 @@ Redis/
 │       ├── db/connection.js    # MongoDB connection
 │       ├── validation/user.js  # Zod user validation (email + password)
 │       └── schema/user.js      # Mongoose User schema
-├── queue/                # Queue service
+├── queue/                # Queue service (Redis lists)
 │   └── src/index.js
-├── pubsub/               # Pub/Sub service (planned)
+├── bullmq/               # BullMQ queue service
+│   └── src/
+│       ├── api.js            # Express app & routes (add jobs, start worker)
+│       ├── queue.js          # Queue instance & Redis connection
+│       ├── worker.js         # Job processor (retries & backoff)
+│       └── executeWorker.js  # Spawns the worker as a child process
+├── pubsub/               # Pub/Sub service
+│   └── src/
+│       ├── api.js            # Express app & publisher routes
+│       ├── subscriber.js     # Channel subscriber (logs messages)
+│       └── executeSubscriber.js # Spawns the subscriber as a child process
 ├── dashboard/            # Dashboard (planned)
 ├── docker-compose.yml    # Redis + MongoDB infrastructure
 ├── package.json          # Workspace root
@@ -74,7 +85,7 @@ This starts:
 ### 3. Run a service
 
 ```bash
-npm run dev:boilerplate     # or dev:site-banner, dev:otp
+npm run dev:boilerplate     # or dev:site-banner, dev:otp, dev:user, dev:queue, ...
 ```
 
 ## Workspaces
@@ -86,8 +97,9 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `otp`         | ✅ Implemented | OTP generation & verification service (30s expiry) |
 | `user`        | ✅ Implemented | User data stored as Redis JSON strings & hashes |
 | `user-session`| ✅ Implemented | User session & auth service (MongoDB + Redis caching)        |
-| `queue`       | ✅ Implemented | Background job queue service                 |
-| `pubsub`      | 🚧 Planned   | Publish/subscribe messaging service          |
+| `queue`       | ✅ Implemented | Background job queue built on Redis lists  |
+| `bullmq`      | ✅ Implemented | Reliable job queue via BullMQ (retries + exponential backoff) |
+| `pubsub`      | ✅ Implemented | Publish/subscribe messaging service          |
 | `dashboard`   | 🚧 Planned   | Dashboard service                            |
 
 ## Available Scripts
@@ -99,8 +111,9 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 | `npm run dev:otp`          | Run the OTP service                  |
 | `npm run dev:user`         | Run the user service                 |
 | `npm run dev:user-session` | Run the user-session service         |
-| `npm run dev:queue`        | Run the queue service                |
-| `npm run dev:pubsub`       | Run the pub/sub service (planned)    |
+| `npm run dev:queue`        | Run the queue service (Redis lists)   |
+| `npm run dev:bullmq`       | Run the BullMQ queue service          |
+| `npm run dev:pubsub`       | Run the pub/sub service               |
 | `npm run dev:dashboard`    | Run the dashboard (planned)          |
 
 ## Environment Variables
@@ -124,7 +137,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp
 
 ### Site banner (`site-banner`)
 
-Stores a single banner message at the Redis key `app:site-banner-key`. Every service also exposes `GET /redis` for a connectivity check.
+Stores a single banner message at the Redis key `app:site-banner-key`. The service also exposes `GET /redis` for a connectivity check.
 
 | Endpoint         | Method | Description                         | Response                                                                      |
 |------------------|--------|-------------------------------------|-------------------------------------------------------------------------------|
@@ -204,7 +217,7 @@ Notes:
 - Both variants currently write to the same key namespace: `user:<id>:json`.
 - The JSON variant uses `SET` / `GET` with `JSON.stringify` / `JSON.parse`; the hash variant uses `HSET` / `HGETALL`.
 - No TTL is set on user keys — they persist until deleted.
-- Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
+- This service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
 
 ### User session (`user-session`)
 
@@ -255,7 +268,7 @@ Notes:
 - On login the user object is stored in Redis at `user:<id>:json` via `SET` with `JSON.stringify`; `GET /users/:id` reads from Redis first (through the `user` service endpoints) and falls back to a MongoDB `findOne` on a cache miss.
 - The service also re-uses the `user` service endpoints (`/user/:id/json`, `/user/:id/hash`) for direct Redis read/write.
 - Passwords are stored and compared in plaintext in this demo — not for production use.
-- Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
+- This service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
 
 ### Queue service (`queue`)
 
@@ -288,7 +301,69 @@ Notes:
 - Jobs are stored as JSON strings in a Redis list under the key `email:queue:key`.
 - `LPUSH` + `RPOP` implements FIFO ordering (newest job pushed to head, oldest popped from tail).
 - `GET /emails/process/one` returns a `400` error when the queue is empty ("no jobs left in queue.").
-- Every service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
+- This service also exposes `GET /redis` for a connectivity check (`{ "redis": "PONG" }`).
+
+### BullMQ service (`bullmq`)
+
+Demonstrates a reliable job queue with [BullMQ](https://bullmq.io/). Email jobs are added to the `emails-queue` queue; a worker process (spawned via `/email/start/worker`) picks them up and processes them with automatic retries and exponential backoff.
+
+| Endpoint               | Method | Description                                     | Response                                                                        |
+|------------------------|--------|-------------------------------------------------|---------------------------------------------------------------------------------|
+| `/emails/bullmq`       | POST   | Add a new email job to the BullMQ queue         | `200` → `{ "message": "new job is added to the bullmq", "queuedJob": {...} }`      |
+| `/emails/length`       | GET    | Get current job counts (waiting, active, completed, failed) | `200` → `{ "message": "queue length", "length": {...} }`                         |
+| `/email/start/worker`  | POST   | Spawn the BullMQ worker process                 | `201` → `{ "message": "worker started" }`; `400` if a worker is already running  |
+
+Request examples:
+
+```bash
+# Add an email job to the BullMQ queue
+curl -X POST http://localhost:5000/emails/bullmq \
+  -H "Content-Type: application/json" \
+  -d '{"from": "sender@example.com", "to": "recipient@example.com", "subject": "Welcome!", "body": "Your account has been created."}'
+
+# Check queue job counts
+curl http://localhost:5000/emails/length
+
+# Start the worker (processes queued jobs)
+curl -X POST http://localhost:5000/email/start/worker
+```
+
+Notes:
+
+- Jobs are added with `attempts: 3` and exponential backoff (`delay: 1000`), so failed jobs are retried automatically.
+- The worker runs as a separate Node process spawned on demand via `/email/start/worker` (only one worker at a time).
+- BullMQ stores all queue keys in Redis under the `bull:emails-queue:*` prefix.
+
+### Pub/Sub service (`pubsub`)
+
+Demonstrates Redis Pub/Sub. Email notifications are published to the `email:pubsub:channel` channel; a separate subscriber process (spawned via `/email/start/subscriber`) receives and logs every message.
+
+| Endpoint                   | Method | Description                                   | Response                                                                  |
+|----------------------------|--------|-----------------------------------------------|---------------------------------------------------------------------------|
+| `/health`                  | GET    | Service & Redis connectivity check            | `200` → `{ "status": "ok", "redis": "connected", ... }`; `503` if Redis is down |
+| `/emails/publish`          | POST   | Publish an email notification to the channel  | `200` → `{ "message": "new email notification has been published", "publishedJob": <receivers> }` |
+| `/email/start/subscriber`  | POST   | Spawn the subscriber process                 | `201` → `{ "message": "subscriber started" }`                                  |
+
+Request examples:
+
+```bash
+# Publish an email notification (publishedJob = number of connected subscribers)
+curl -X POST http://localhost:5000/emails/publish \
+  -H "Content-Type: application/json" \
+  -d '{"from": "sender@example.com", "to": "recipient@example.com", "subject": "Welcome!", "body": "Your account has been created."}'
+
+# Start the subscriber (subscribes to email:pubsub:channel)
+curl -X POST http://localhost:5000/email/start/subscriber
+
+# Health check
+curl http://localhost:5000/health
+```
+
+Notes:
+
+- Messages are published with `PUBLISH email:pubsub:channel <json>`; `publishedJob` is the number of subscribers that received the message (`0` if none are subscribed).
+- The subscriber uses `SUBSCRIBE` and logs every incoming message to the console.
+- Unlike the other services, this one exposes `GET /health` instead of `GET /redis`.
 
 ## License
 
