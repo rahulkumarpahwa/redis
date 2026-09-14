@@ -12,7 +12,7 @@
     "queue",
     "bullmq",
     "pubsub",
-    "dashboard"
+    "leaderboard"
   ],
   "scripts": {
     "dev:boilerplate": "npm run dev --workspace=boilerplate",
@@ -23,7 +23,7 @@
     "dev:queue": "npm run dev --workspace=queue",
     "dev:bullmq": "npm run dev --workspace=bullmq",
     "dev:pubsub": "npm run dev --workspace=pubsub",
-    "dev:dashboard": "npm run dev --workspace=dashboard"
+    "dev:leaderboard": "npm run dev --workspace=leaderboard"
   },
   "type": "module",
   "author": {
