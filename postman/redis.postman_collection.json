@@ -829,6 +829,141 @@
           }
         }
       ]
+    },
+    {
+      "name": "leaderboard",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /post/:id/views",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/post/:id/views",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "post",
+                ":id",
+                "views"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /post/:id/views",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/post/:id/views",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "post",
+                ":id",
+                "views"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /leaderboard/score",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"123\",\n  \"score\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/leaderboard/score",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaderboard",
+                "score"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/leaderboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaderboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /leaderboard/:userId/rank",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/leaderboard/:userId/rank",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaderboard",
+                ":userId",
+                "rank"
+              ],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "123"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
