@@ -1,6 +1,6 @@
 # Redis Monorepo
 
-A monorepo of Redis-based microservices built with Node.js, Express, and MongoDB. This project demonstrates various Redis use cases — caching, queues, pub/sub, OTP, and more — organized as npm workspaces.
+A monorepo of Redis-based microservices built with Node.js, Express, and MongoDB. This project demonstrates various Redis use cases — caching, queues, pub/sub, OTP, leaderboards, and more — organized as npm workspaces.
 
 ## Tech Stack
 
@@ -46,7 +46,8 @@ Redis/
 │       ├── api.js            # Express app & publisher routes
 │       ├── subscriber.js     # Channel subscriber (logs messages)
 │       └── executeSubscriber.js # Spawns the subscriber as a child process
-├── dashboard/            # Dashboard (planned)
+├── leaderboard/          # Leaderboard service (Redis sorted sets)
+│   └── src/index.js
 ├── docker-compose.yml    # Redis + MongoDB infrastructure
 ├── package.json          # Workspace root
 ├── postman/              # Postman collection for the services
@@ -85,7 +86,7 @@ This starts:
 ### 3. Run a service
 
 ```bash
-npm run dev:boilerplate     # or dev:site-banner, dev:otp, dev:user, dev:queue, ...
+npm run dev:boilerplate     # or dev:site-banner, dev:otp, dev:user, dev:leaderboard, ...
 ```
 
 ## Workspaces
@@ -100,7 +101,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp, dev:user, dev:queue, 
 | `queue`       | ✅ Implemented | Background job queue built on Redis lists  |
 | `bullmq`      | ✅ Implemented | Reliable job queue via BullMQ (retries + exponential backoff) |
 | `pubsub`      | ✅ Implemented | Publish/subscribe messaging service          |
-| `dashboard`   | 🚧 Planned   | Dashboard service                            |
+| `leaderboard` | ✅ Implemented | Leaderboard service (Redis sorted sets)      |
 
 ## Available Scripts
 
@@ -114,7 +115,7 @@ npm run dev:boilerplate     # or dev:site-banner, dev:otp, dev:user, dev:queue, 
 | `npm run dev:queue`        | Run the queue service (Redis lists)   |
 | `npm run dev:bullmq`       | Run the BullMQ queue service          |
 | `npm run dev:pubsub`       | Run the pub/sub service               |
-| `npm run dev:dashboard`    | Run the dashboard (planned)          |
+| `npm run dev:leaderboard` | Run the leaderboard service           |
 
 ## Environment Variables
 
@@ -363,7 +364,45 @@ Notes:
 
 - Messages are published with `PUBLISH email:pubsub:channel <json>`; `publishedJob` is the number of subscribers that received the message (`0` if none are subscribed).
 - The subscriber uses `SUBSCRIBE` and logs every incoming message to the console.
-- Unlike the other services, this one exposes `GET /health` instead of `GET /redis`.
+- Along with the `leaderboard` service, this one exposes `GET /health` instead of `GET /redis`.
+
+### Leaderboard service (`leaderboard`)
+
+Demonstrates a real-time leaderboard and post view counter using Redis **sorted sets**. User scores are added with `ZINCRBY` against the `leaderboard` key, the top 10 are fetched with `ZREVRANGE ... WITHSCORES`, and a user's rank is computed with `ZREVRANK`.
+
+| Endpoint                      | Method | Description                                     | Response                                                                          |
+|-------------------------------|--------|-------------------------------------------------|-----------------------------------------------------------------------------------|
+| `/health`                     | GET    | Service & Redis connectivity check              | `200` → `{ "status": "ok", "redis": "connected", ... }`; `503` if Redis is down     |
+| `/post/:id/views`             | POST   | Increment a post's view count (`INCR`)          | `201` → `{ "message": "post:<id> count has been increased by <n>" }`               |
+| `/post/:id/views`             | GET    | Get a post's view count                         | `200` → `{ "message": "post:<id> has count of <n>" }`                              |
+| `/leaderboard/score`          | POST   | Add points to a user's score (`ZINCRBY`)        | `200` → `{ "message": "member user:<id>:score has count of <n>" }`                 |
+| `/leaderboard`                | GET    | Get the top 10 users (`ZREVRANGE ... WITHSCORES`) | `200` → `{ "top10Members": [...] }`                                              |
+| `/leaderboard/:userId/rank`   | GET    | Get a user's rank, starting from 0 (`ZREVRANK`) | `200` → `{ "userRank": <n or null> }`                                             |
+
+Request examples:
+
+```bash
+# Add 5 points to user 123's score (creates the member if it doesn't exist)
+curl -X POST http://localhost:5000/leaderboard/score \
+  -H "Content-Type: application/json" \
+  -d '{"id": "123", "score": 5}'
+
+# Get the top 10 (highest to lowest, with scores)
+curl http://localhost:5000/leaderboard
+
+# Get user 123's rank (0 = first place, null if not ranked)
+curl http://localhost:5000/leaderboard/123/rank
+
+# Increment / read a post's view count
+curl -X POST http://localhost:5000/post/42/views
+curl http://localhost:5000/post/42/views
+```
+
+Notes:
+
+- Scores are stored in a Redis sorted set under the key `leaderboard`; members are named `user:<id>:score` and post counts use `post:<id>:views`.
+- `ZINCRBY` adds points to a member's existing score (creating the member if missing); `ZREVRANGE 0 9 WITHSCORES` returns the top 10 in descending score order; `ZREVRANK` returns a zero-based rank (`null` when the member is not in the set).
+- This service exposes `GET /health` (like `pubsub`) instead of the `GET /redis` connectivity endpoint.
 
 ## License
 
